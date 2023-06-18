@@ -1,13 +1,13 @@
 namespace WebScrapper.scrapper;
 
 /// <summary>
-/// Represents an HTML tag which may include attributes <br/>
-/// In form of: <code>&lt;tagname prop1="val1" prop2="val2"&gt; </code>
-///
+/// Represents an HTML tag which may include attributes in the form of:
+/// <code>&lt;tagname prop1="val1" prop2="val2"&gt; </code>
 /// </summary>
 public class Tag{
     public string Name{ get; }
-    public int StartOffset{ get; set; } //offset at which the given tag begins
+    public int StartOffset{ get; internal set; } //offset at which the given tag begins
+    public int EndOffset{ get; internal set; } = -1;
     public List<(string, string)> Attributes{ get; }
 
     public bool ContainsAttribute((string, string) pair){
@@ -62,7 +62,12 @@ public class Tag{
     public Tag(string name){
         StartOffset = 0;
         Name = name;
-        Attributes = new ();
+        Attributes = new List<(string, string)>();
+    }
+    public Tag(string name, List<(string, string)> attributes){
+        StartOffset = 0;
+        Name = name;
+        Attributes = attributes;
     }
 
     public override string ToString(){

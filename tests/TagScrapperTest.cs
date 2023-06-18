@@ -101,23 +101,13 @@ public class TagScrapperTest{
         Assert.AreEqual(0, tag.StartOffset);
     }
     [Test]
-    public void full(){
-        string contents = File.ReadAllText(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Desktop/scrappeur/website.html");
-        HtmlDoc doc = new HtmlDoc(contents);
-        Tag? starterTag = doc.Find("span", ("class", "lyrics__content__ok"));
-        if (starterTag == null){
-            Assert.Fail("Starter tag not Found");
+    public void attributesWithManySpacesVar1(){
+        const string input = "<picture width =  512      height=256>";
+        Tag? tag = new HtmlDoc(input).Find("picture", ("width", "512"), ("height", "256"));
+        if (tag == null){
+            Assert.Fail("Tag Not Found");
             return;
         }
-        Tag? nextTag = doc.FindFrom("span", starterTag.StartOffset + 1, ("class", "lyrics__content__ok"));
-        if (nextTag == null){
-            Assert.Fail("Next tag not Found");
-            return;
-        }
-        Assert.AreNotEqual(starterTag.StartOffset, nextTag.StartOffset);
-        
-        Console.WriteLine(nextTag.StartOffset);
-        Console.WriteLine(contents.Substring(nextTag.StartOffset, 1000));
+        Assert.AreEqual(0, tag.StartOffset);
     }
 }

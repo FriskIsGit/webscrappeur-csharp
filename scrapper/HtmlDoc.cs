@@ -5,22 +5,56 @@ namespace WebScrapper.scrapper;
 public class HtmlDoc{
     private readonly string html;
     private readonly int len;
-    private char concatenatingChar;
+    private char concatChar;
+    private bool delimitTags = true;
+    private bool brToNewline = false;
+
     public HtmlDoc(string contents){
         html = contents;
         len = html.Length;
-        concatenatingChar = '\n';
+        concatChar = '\n';
     }
 
     public void SetConcatenatingChar(char given){
-        concatenatingChar = given;
+        concatChar = given;
     }
-    
+    //<br> -> '\n'
+    public void ReplaceLineBreakWithNewLine(bool enabled){
+        brToNewline = enabled;
+    }
+    //disables concatenation of independent tags
+    public void DelimitTags(bool enabled){
+        delimitTags = enabled;
+    }
+
     public Tag? Find(string tag, params (string, string)[] attributes){
         return FindFrom(tag, 0, attributes);
     }
     public Tag? Find(string tag){
         return FindFrom(tag, 0);
+    }
+    
+    public List<Tag> FindAllFrom(string tag, int from, params (string, string)[] attributes){
+        List<Tag> tags = new List<Tag>();
+        int cursor = from;
+        while(cursor < len){
+            Tag? traverserTag = FindFrom(tag, cursor, attributes);
+            if (traverserTag == null){
+                break;
+            }
+            tags.Add(traverserTag);
+            if (traverserTag.EndOffset == -1){
+                cursor = traverserTag.StartOffset + 1;
+            }
+            else{
+                cursor = traverserTag.EndOffset + 1;
+            }
+        }
+
+        return tags;
+    }
+    public List<Tag> FindAll(string tag, params (string, string)[] attributes){
+        return FindAllFrom(tag, 0, attributes);
     }
 
     public Tag? FindFrom(string tag, int from, params (string, string)[] attributes){
@@ -83,7 +117,7 @@ public class HtmlDoc{
                 case ' ':
                     if (afterEqual){
                         if (value.Length > 0 && !inQuoteVal){
-                            parsedTag.Attributes.Add((name.ToString(), Unstringify(value)));
+                            parsedTag.Attributes.Add((name.ToString(), value.ToString()));
                             afterEqual = false;
                             name.Clear();
                             value.Clear();
@@ -119,8 +153,9 @@ public class HtmlDoc{
                     break;
                 case '>':
                     if (!inQuoteVal){
-                        //consume current pair and exit
-                        parsedTag.Attributes.Add((name.ToString(), Unstringify(value)));
+                        if (name.Length > 0 && value.Length > 0){
+                            parsedTag.Attributes.Add((name.ToString(), value.ToString()));
+                        }
                         return i; 
                     }
                     if (afterEqual){
@@ -143,18 +178,17 @@ public class HtmlDoc{
         return -1;
     }
     /// <summary>
-    /// Extracts text from given tag and all its sub-tags. <br/>
+    /// Extracts text from given tag and all its sub-tags beginning at <c>StartOffset</c>. <br/>
     /// Text extracted from sub-tags will be concatenated using the specified concatenating char
-    /// which can be set by calling <code>HtmlDoc.SetConcatenatingChar()</code>
+    /// which can be set by calling <c>SetConcatenatingChar()</c>.<br/>
+    /// The <c>EndOffset</c> field of the tag will be set to the index where parsing finished if its value was -1.
     /// </summary>
-    /// <param name="tag"></param>
+    /// <param name="tag">the tag to extract text from</param> 
     /// <returns>The raw extracted html</returns>
     public string ExtractText(Tag tag){
-        if (Tags.ForbiddenToClose(tag.Name)){
-            //throw new ArgumentException("This tag cannot enclose any text");
+        if (tag.StartOffset < 0 || tag.StartOffset >= len){
             return "";
         }
-
         bool append = false, inQuotes = false;
         bool concatenate = false;
         Stack<string> stack = new Stack<string>();
@@ -164,7 +198,12 @@ public class HtmlDoc{
             switch (chr){
                 case ' ':
                     if (append){
+                        //based on default case
+                        if (delimitTags && concatenate && text.Length > 0){
+                            text.Append(concatChar);
+                        }
                         text.Append(' ');
+                        concatenate = false;
                     }
                     break;
                 case '"':
@@ -203,23 +242,26 @@ public class HtmlDoc{
                     exitLoop:
                     
                     string anyTag = html[(i+1)..tagEnd];
+                    if (brToNewline && anyTag.StartsWith(Tags.LineBreak)){
+                        text.Append('\n');
+                    }
                     //move cursor to '>' or ' ' before attributes
                     i = tagEnd;
+                    bool voidTag = anyTag[^1] == '/'; //last char
                     if (closing){
                         // while stack is not exhausted
                         while (stack.Count > 0 && stack.Pop() != anyTag){
                         }
                         if (stack.Count == 0){
+                            if(tag.EndOffset == -1) 
+                                tag.EndOffset = i;
                             return text.ToString();
                         }
-                    }else if (!Tags.ForbiddenToClose(anyTag)){
+                    }else if (!voidTag){
                         stack.Push(anyTag);
                     }
-                    //else don't push it because it will never be closed
-
-                    if (hasAttributes){
-                        append = false;
-                    }
+                    
+                    append = !hasAttributes;
                     concatenate = true;
                     break;
                 case '>':
@@ -228,35 +270,18 @@ public class HtmlDoc{
                     break;
                 default:
                     if (append){
-                        if (concatenate && text.Length > 0){
-                            concatenate = false;
-                            text.Append(concatenatingChar);
+                        if (delimitTags && concatenate && text.Length > 0){
+                            text.Append(concatChar);
                         }
-                        else{
-                            //this ensures we don't prepend the character when length is 0
-                            concatenate = false;
-                        }
-                        
+                        concatenate = false;
                         text.Append(chr);
                     }
                     break;
             }
         }
         //if unclosed should exit due to length here
+        if(tag.EndOffset == -1)
+            tag.EndOffset = len;
         return text.ToString();
-    }
-    
-    private static string Unstringify(string str){
-        if (str[0] == '"' && str[^1] == '"'){
-            return str[1..^1];
-        }
-
-        return str;
-    }
-    private static string Unstringify(StringBuilder str){
-        if (str.Length < 2 || str[0] != '"' || str[^1] != '"') 
-            return str.ToString();
-
-        return str.ToString(1, str.Length-2);
     }
 }

@@ -39,14 +39,14 @@ public class Tags{
 
     public const string Image = "img";
     public const string Input = "input";
-    public const string LineBreak = "br";
     public const string ThematicBreak = "hr";
     public const string Meta = "meta";
+    public const string LineBreak = "br";
 
-    private static readonly List<string> UNCLOSABLE = new List<string>(){ Image, Input, LineBreak, ThematicBreak, Meta};
+    private static readonly List<string> SELF_CLOSING = new(){ Image, Input, LineBreak, ThematicBreak, Meta};
 
-    public static bool ForbiddenToClose(string tag){
-        return UNCLOSABLE.Contains(tag);
+    public static bool IsSelfClosing(string tag){
+        return SELF_CLOSING.Contains(tag);
     }
 }
 
