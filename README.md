@@ -5,9 +5,9 @@ This project was made in .NET `7.0`, if you know what you're doing feel free to 
 
 Let's suppose this is the html we want to scrap
 ```html
-<div class=\"outer_div\" property=\"value\">
+<div class="outer_div" property="value">
     StartText
-    <div class=\"inner_div\">
+    <div class="inner_div">
         Inner text
     </div>
     Ending text
