@@ -102,6 +102,18 @@ public class TextScrapperTest{
         Assert.AreEqual(" 123z ", html.ExtractText(tag));
     }
     [Test]
+    public void unclosedOuter(){
+        const string input = "<div>outer text<ref id=84>123z</ref>";
+        HtmlDoc doc = new HtmlDoc(input);
+        doc.SetConcatenatingChar(';');
+        Tag? tag = doc.Find("div");
+        if (tag == null){
+            Assert.Fail("Tag Not Found");
+            return;
+        }
+        Assert.AreEqual("outer text;123z", doc.ExtractText(tag));
+    }
+    [Test]
     public void startWithSpaceNoAttrib(){
         const string input = "<picture> 123z</picture>";
         HtmlDoc html = new HtmlDoc(input);
