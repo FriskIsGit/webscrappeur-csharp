@@ -58,6 +58,7 @@ Or disable concatenation completely
 doc.DelimitTags(false)
 ```
 ---
+### Tips
 Retrieve all matching tags at once
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
