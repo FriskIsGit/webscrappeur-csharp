@@ -4,7 +4,7 @@ using WebScrapper.scrapper;
 
 namespace WebScrapper.tests;
 
-public class WebTextScrapperTest{
+public class LyricsScrapperTest{
     private static readonly string RESOURCE_DIR_PATH = 
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Desktop/scrappeur/";
 

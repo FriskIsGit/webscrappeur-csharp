@@ -53,18 +53,24 @@ Then the output would be
 ```bash
 StartText;Inner text;Ending text
 ```
+Or disable concatenation completely
+```csharp
+doc.DelimitTags(false)
+```
 ---
-To find all tags at once
+Retrieve all matching tags at once
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
-List<Tag> tags = doc.FindAll("div", ("class", "outer_div"), ("property", "value"));
+List<Tag> tags = doc.FindAll("script");
 foreach(var tag in tags){
     string extract = doc.ExtractText(tag);
     Console.WriteLine(extract);
 }
 ```
-
-TODO:
-- add more code snippets
-- implement html fetch
+---
+Fetch html from URL with browser headers
+```csharp
+string html = HtmlDoc.fetchHtml("https://toscrape.com");
+HtmlDoc doc = new HtmlDoc(html);
+```
 

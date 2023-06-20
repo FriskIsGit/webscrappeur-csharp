@@ -1,8 +1,11 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace WebScrapper.scrapper;
 
 public class HtmlDoc{
+    private static readonly HttpClient Client = new();
     private readonly string html;
     private readonly int len;
     private char concatChar;
@@ -283,5 +286,26 @@ public class HtmlDoc{
         if(tag.EndOffset == -1)
             tag.EndOffset = len;
         return text.ToString();
+    }
+
+    public static string fetchHtml(string url){
+        Client.Timeout = TimeSpan.FromSeconds(6);
+        var getRequest = new HttpRequestMessage {
+            RequestUri = new Uri(url),
+            Method = HttpMethod.Get,
+        };
+        getRequest.Headers.UserAgent.ParseAdd("Mozilla/5.0 Gecko/20100101");
+        getRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
+        getRequest.Headers.AcceptLanguage.ParseAdd("en-US;q=0.7");
+        getRequest.Headers.Add("Set-GPC", "1");
+        var response = Client.Send(getRequest);
+        if (response.StatusCode == HttpStatusCode.OK){
+            string contentOk = response.Content.ReadAsStringAsync().Result;
+            return contentOk ?? "";
+        }
+
+        Console.WriteLine("Response: " + response.StatusCode);
+        string content = response.Content.ReadAsStringAsync().Result;
+        return content ?? "";
     }
 }

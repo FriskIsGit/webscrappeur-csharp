@@ -165,4 +165,46 @@ public class TextScrapperTest{
         }
         Assert.AreEqual(0, tag.StartOffset);
     }
+    [Test]
+    public void categoriesRealScrape(){
+        string html = HtmlDoc.fetchHtml("http://books.toscrape.com");
+        HtmlDoc doc = new HtmlDoc(html);
+        Tag? tag = doc.Find("a", ("href", "catalogue/category/books_1/index.html"));
+        if (tag == null){
+            Assert.Fail("Pre-tag not found");
+            return;
+        }
+        doc.DelimitTags(false);
+        List<Tag> elements = doc.FindAllFrom("li", tag.StartOffset);
+        var categories = new List<string>();
+        foreach (var el in elements){
+            string extract = doc.ExtractText(el);
+            categories.Add(stripJunk(extract));
+        }
+        Console.WriteLine(string.Join(", ", categories));
+    }
+
+    private static string stripJunk(string str){
+        int stIndex = 0, endIndex = str.Length-1;
+        for (; stIndex < str.Length; stIndex++){
+            if (str[stIndex] == ' ' || str[stIndex] == '\n'){
+                stIndex++;
+                continue;
+            }
+            if (stIndex > 0){
+                stIndex--;
+            }
+            break;
+        }
+        
+        for (int i = str.Length -1; i > -1; i--){
+            if (str[endIndex] == ' ' || str[endIndex] == '\n'){
+                endIndex--;
+                continue;
+            }
+            break;
+        }
+
+        return str[stIndex..(endIndex+1)];
+    }
 }
