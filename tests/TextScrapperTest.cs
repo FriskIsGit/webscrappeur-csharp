@@ -1,5 +1,4 @@
-﻿using System.Text;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using WebScrapper.scrapper;
 
 namespace WebScrapper.tests;
@@ -175,7 +174,7 @@ public class TextScrapperTest{
             return;
         }
         doc.DelimitTags(false);
-        List<Tag> elements = doc.FindAllFrom("li", tag.StartOffset);
+        List<Tag> elements = doc.FindAllFrom("li", tag.StartOffset, false);
         var categories = new List<string>();
         foreach (var el in elements){
             string extract = doc.ExtractText(el);

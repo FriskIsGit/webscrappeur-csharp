@@ -16,8 +16,8 @@ public class LyricsScrapperTest{
         html.ReplaceLineBreakWithNewLine(true);
         html.DelimitTags(false);
         StringBuilder fullExtract = new StringBuilder(512);
-        List<Tag> tags = html.FindAll("div", ("class", "Lyrics__Container-sc-1ynbvzw-5 Dzxov"),
-            ("data-lyrics-container", "true"));
+        List<Tag> tags = html.FindAll("div",
+            ("class", "Lyrics__Container-sc-1ynbvzw-5 Dzxov"), ("data-lyrics-container", "true"));
         Console.WriteLine("SIZE: " + tags.Count);
         
         foreach (var div in tags){
@@ -39,7 +39,7 @@ public class LyricsScrapperTest{
             return;
         }
         
-        Tag? mainTag = html.FindFrom("span", firstTag.StartOffset +1,  ("class", "lyrics__content__ok"));
+        Tag? mainTag = html.FindFrom("span", firstTag.StartOffset +1,  true, ("class", "lyrics__content__ok"));
         if (mainTag == null){
             Assert.Fail("Main tag not found");
             return;
@@ -78,7 +78,7 @@ public class LyricsScrapperTest{
             Assert.Fail("First tag not found");
             return;
         }
-        Tag? innerTag = html.FindFrom("div", firstTag.StartOffset+1, ("class", "article-content"));
+        Tag? innerTag = html.FindFrom("div", firstTag.StartOffset+1, true, ("class", "article-content"));
         if (innerTag == null){
             Assert.Fail("Inner tag not found");
             return;
