@@ -5,7 +5,9 @@ using System.Text;
 namespace WebScrapper.scrapper;
 
 public class HtmlDoc {
-    private static readonly HttpClient Client = new();
+    private static readonly HttpClient Client = new() {
+        Timeout = TimeSpan.FromSeconds(6)
+    };
     private readonly string html;
     private readonly int len;
     private char concatChar;
@@ -342,7 +344,6 @@ public class HtmlDoc {
     }
 
     public static string fetchHtml(string url) {
-        Client.Timeout = TimeSpan.FromSeconds(6);
         var getRequest = new HttpRequestMessage {
             RequestUri = new Uri(url),
             Method = HttpMethod.Get,

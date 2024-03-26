@@ -22,6 +22,18 @@ public class Tag{
         return false;
     }
 
+    public string? GetAttribute(string key){
+        if (Attributes.Count == 0){
+            return null;
+        }
+        foreach (var key_value in Attributes){
+            if (key_value.Item1 == key){
+                return key_value.Item2;
+            }
+        }
+        return null;
+    }
+    
     public bool Matches(Tag tag){
         if (Name != tag.Name){
             return false;
