@@ -6,7 +6,7 @@ namespace WebScrapper.scrapper;
 
 public class HtmlDoc {
     private static readonly HttpClient Client = new() {
-        Timeout = TimeSpan.FromSeconds(6)
+        Timeout = TimeSpan.FromSeconds(10)
     };
     private readonly string html;
     private readonly int len;
@@ -37,26 +37,26 @@ public class HtmlDoc {
         delimitTags = enabled;
     }
 
-    /// <summary>Find a tag by name matching given attributes.</summary>
-    /// <param name="tag"> the tag name to find</param>
-    /// <param name="attributes"> the attributes to look for</param>
+    /// <summary> Find a tag by name matching given attributes. The order in which attributes are provided does not matter </summary>
+    /// <param name="tag"> The tag name to find</param>
+    /// <param name="attributes"> The attributes to look for</param>
     /// <returns>The raw Tag object or null if not found</returns>
-    public Tag? Find(string tag, params (string, string)[] attributes) {
-        return FindFrom(tag, 0, false, attributes);
+    public Tag? Find(string tag, params (string, string, Compare)[] attributes) {
+        return FindFrom(tag, 0, attributes);
     }
 
-    /// <summary>Find a tag by name. The tag may or may not contain attributes.</summary>
+    /// <summary>Find a tag by name that has no attributes.</summary>
     /// <param name="tag"> the tag name to find</param> 
     /// <returns>The raw Tag object or null if not found</returns>
     public Tag? Find(string tag) {
-        return FindFrom(tag, 0, true);
+        return FindFrom(tag, 0);
     }
 
-    public List<Tag> FindAllFrom(string tag, int from, bool matchTagOnly, params (string, string)[] attributes) {
+    public List<Tag> FindAllFrom(string tag, int from, params (string, string, Compare)[] attributes) {
         List<Tag> tags = new List<Tag>();
         int cursor = from;
         while (cursor < len) {
-            Tag? traverserTag = FindFrom(tag, cursor, matchTagOnly, attributes);
+            Tag? traverserTag = FindFrom(tag, cursor, attributes);
             if (traverserTag == null) {
                 break;
             }
@@ -73,32 +73,38 @@ public class HtmlDoc {
         return tags;
     }
 
-    public List<Tag> FindAll(string tag, params (string, string)[] attributes) {
-        return FindAllFrom(tag, 0, false, attributes);
+    public List<Tag> FindAll(string tag, params (string, string, Compare)[] attributes) {
+        return FindAllFrom(tag, 0, attributes);
     }
     public List<Tag> FindAll(string tag) {
-        return FindAllFrom(tag, 0, true);
+        return FindAllFrom(tag, 0);
     }
 
     /// <summary>Linearly searches for a tag in a given HtmlDoc returning the first Tag that matches predicates</summary>
     /// <param name="tag"> the tag name to find</param> 
     /// <param name="from"> the index to search from</param> 
-    /// <param name="matchTagOnly"> whether to skip comparing <c>attributes</c> </param>
-    /// <param name="attributes"> (key, value) pairs of strings representing tag attributes to match against only if <c>match_attrib</c> is true</param>
+    /// <param name="attributes"> (key, value, _) pairs of strings representing tag attributes to match against </param> 
     /// <returns>The <c>Tag</c> object or <c>null</c> if not found</returns>
-    public Tag? FindFrom(string tag, int from, bool matchTagOnly, params (string, string)[] attributes) {
+    public Tag? FindFrom(string tag, int from, params (string, string, Compare)[] attributes) {
         for (int i = from; i < len; i++) {
             char chr = html[i];
             switch (chr) {
                 case '<':
+                    bool comment = i + 1 < len && html[i + 1] == '!';
+                    if (comment) {
+                        i = skipComment(i+1);
+                        continue;
+                    }
                     bool closing = i + 1 < len && html[i + 1] == '/';
                     if (closing) {
-                        i++;
+                        // skip to the end of it
+                        int tagNameSt = i + 2;
+                        i = IndexOf(">", tagNameSt);
                         continue;
                     }
 
                     bool hasAttributes = false;
-                    //parse tag
+                    // parse tag
                     int j = i + 1;
                     for (; j < len; j++) {
                         if (html[j] == ' ') {
@@ -118,7 +124,7 @@ public class HtmlDoc {
                         end = parseAttributes(parsedTag, j + 1);
                     }
 
-                    if ((matchTagOnly && parsedTag.Name == tag) || parsedTag.Matches(tag, attributes)) {
+                    if (parsedTag.Name == tag && parsedTag.CompareAttributes(attributes)) {
                         parsedTag.StartOffset = i;
                         return parsedTag;
                     }
@@ -223,6 +229,89 @@ public class HtmlDoc {
 
         return -1;
     }
+    
+    /// <summary> Searches for all tags matching predicates within given tag </summary>
+    /// <param name="tag"> the tag within which to search</param>
+    /// <param name="target"> the tag name to match against </param>
+    /// <returns>The <c>Tag</c> object or <c>null</c> if not found</returns>
+    public List<Tag> ExtractTags(Tag tag, string target) {
+        if (tag.StartOffset < 0 || tag.StartOffset >= len) {
+            return new List<Tag>();
+        }
+        var extractedTags = new List<Tag>();
+        int from = tag.EndOffset != -1 ? tag.EndOffset : tag.StartOffset;
+        Stack<string> tagStack = new Stack<string>();
+        for (int i = from; i < len; i++) {
+            char chr = html[i];
+            switch (chr) {
+                case '<':
+                    bool comment = i + 1 < len && html[i + 1] == '!';
+                    if (comment) {
+                        i = skipComment(i+1);
+                        continue;
+                    }
+                    bool closing = i + 1 < len && html[i + 1] == '/';
+                    if (closing) {
+                        int tagNameSt = i + 2;
+                        i = IndexOf(">", tagNameSt);
+                        string closedTagName = html[tagNameSt..i].Trim();
+                        // Pop all void tags
+                        while (tagStack.Count > 0 && closedTagName != tagStack.Pop()) { }
+                        if (tagStack.Count == 0) {
+                            return extractedTags;
+                        }
+                        continue;
+                    }
+
+                    bool hasAttributes = false;
+                    // parse tag
+                    int j = i + 1;
+                    for (; j < len; j++) {
+                        if (html[j] == ' ') {
+                            hasAttributes = true;
+                            break;
+                        }
+
+                        if (html[j] == '>') {
+                            break;
+                        }
+                    }
+
+                    string tagName = html[(i + 1)..j];
+                    Tag parsedTag = new Tag(tagName);
+                    int end = -1;
+                    if (hasAttributes) {
+                        end = parseAttributes(parsedTag, j + 1);
+                    }
+
+                    tagStack.Push(parsedTag.Name);
+                    if (html[end - 1] == '/') {
+                        tagStack.Pop();
+                    }
+                    // It could be that the tag given is a void tag in which case it has no tags
+                    if (tagStack.Count == 0) {
+                        return extractedTags;
+                    }
+
+                    if (parsedTag.Name == target) {
+                        parsedTag.StartOffset = i;
+                        extractedTags.Add(parsedTag);
+                    }
+
+                    if (hasAttributes) {
+                        i = end;
+                    }
+
+                    break;
+            }
+        }
+
+        return extractedTags;
+    }
+
+    private int skipComment(int from) {
+        return IndexOf("-->", from);
+    }
 
     /// <summary>
     /// Extracts text from given tag and all its sub-tags beginning at <c>StartOffset</c>. The extraction will begin
@@ -246,7 +335,7 @@ public class HtmlDoc {
             switch (chr) {
                 case ' ':
                     if (append) {
-                        //based on default case
+                        // based on default case
                         if (delimitTags && concatenate && text.Length > 0) {
                             text.Append(concatChar);
                         }
@@ -265,8 +354,13 @@ public class HtmlDoc {
                     }
 
                     break;
-                //cannot exist in text in this form, must be a character code
+                // cannot exist in text in this form, must be a character code
                 case '<':
+                    bool comment = i + 1 < len && html[i + 1] == '!';
+                    if (comment) {
+                        i = skipComment(i+1);
+                        continue;
+                    }
                     bool closing = i + 1 < len && html[i + 1] == '/';
                     if (closing) {
                         i++;
@@ -295,11 +389,11 @@ public class HtmlDoc {
                     exitLoop:
 
                     string anyTag = html[(i + 1)..tagEnd];
-                    if (brToNewline && anyTag.StartsWith(Tags.LineBreak)) {
+                    if (brToNewline && anyTag.StartsWith("br")) {
                         text.Append('\n');
                     }
 
-                    //move cursor to '>' or ' ' before attributes
+                    // move cursor to '>' or ' ' before attributes
                     i = tagEnd;
                     bool voidTag = anyTag[^1] == '/'; //last char
                     if (closing) {
@@ -332,15 +426,26 @@ public class HtmlDoc {
                         concatenate = false;
                         text.Append(chr);
                     }
-
                     break;
             }
         }
 
-        //if unclosed should exit due to length here
+        // if unclosed should exit due to length here
         if (tag.EndOffset == -1)
             tag.EndOffset = len;
         return text.ToString();
+    }
+
+    // Always returns indices within bounds
+    private int IndexOf(string text, int from) {
+        if (from >= len) {
+            return len - 1;
+        }
+        int index = html.IndexOf(text, from, StringComparison.InvariantCulture);
+        if (index == -1) {
+            return len - 1;
+        }
+        return index;
     }
 
     public static string fetchHtml(string url) {
@@ -354,12 +459,10 @@ public class HtmlDoc {
         getRequest.Headers.Add("Set-GPC", "1");
         var response = Client.Send(getRequest);
         if (response.StatusCode == HttpStatusCode.OK) {
-            string contentOk = response.Content.ReadAsStringAsync().Result;
-            return contentOk ?? "";
+            return response.Content.ReadAsStringAsync().Result;
         }
 
-        Console.WriteLine("Response: " + response.StatusCode);
-        string content = response.Content.ReadAsStringAsync().Result;
-        return content ?? "";
+        Console.WriteLine("Response Code: " + response.StatusCode);
+        return response.Content.ReadAsStringAsync().Result;
     }
 }

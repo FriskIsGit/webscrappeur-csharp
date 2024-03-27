@@ -6,7 +6,7 @@ namespace WebScrapper.tests;
 
 public class LyricsScrapperTest{
     private static readonly string RESOURCE_DIR_PATH = 
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Desktop/scrappeur/";
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Desktop/scraper/";
 
     [Test]
     public void fullGeniusScrape(){
@@ -17,7 +17,8 @@ public class LyricsScrapperTest{
         html.DelimitTags(false);
         StringBuilder fullExtract = new StringBuilder(512);
         List<Tag> tags = html.FindAll("div",
-            ("class", "Lyrics__Container-sc-1ynbvzw-5 Dzxov"), ("data-lyrics-container", "true"));
+            ("class", "Lyrics__Container-sc-1ynbvzw-5", Compare.VALUE_STARTS_WITH), 
+            ("data-lyrics-container", "true", Compare.EXACT));
         Console.WriteLine("SIZE: " + tags.Count);
         
         foreach (var div in tags){
@@ -33,13 +34,12 @@ public class LyricsScrapperTest{
         string input = File.ReadAllText(RESOURCE_DIR_PATH + "musix.html");
         
         HtmlDoc html = new HtmlDoc(input);
-        Tag? firstTag = html.Find("span", ("class", "lyrics__content__ok"));
+        Tag? firstTag = html.Find("span", ("class", "lyrics__content__ok", Compare.EXACT));
         if (firstTag == null){
             Assert.Fail("First tag not found");
             return;
         }
-        
-        Tag? mainTag = html.FindFrom("span", firstTag.StartOffset +1,  true, ("class", "lyrics__content__ok"));
+        Tag? mainTag = html.FindFrom("span", firstTag.StartOffset +1, ("class", "lyrics__content__ok", Compare.EXACT));
         if (mainTag == null){
             Assert.Fail("Main tag not found");
             return;
@@ -55,10 +55,10 @@ public class LyricsScrapperTest{
         HtmlDoc html = new HtmlDoc(input);
         html.DelimitTags(false);
         Tag? tag = html.Find("pre", 
-            ("id", "lyric-body-text"), 
-            ("class", "lyric-body"),
-            ("dir", "ltr"),
-            ("data-lang", "en")
+            ("id", "lyric-body-text", Compare.EXACT), 
+            ("class", "lyric-body", Compare.EXACT),
+            ("dir", "ltr", Compare.EXACT),
+            ("data-lang", "en", Compare.EXACT)
             );
         if (tag == null){
             Assert.Fail("First tag not found");
@@ -73,12 +73,12 @@ public class LyricsScrapperTest{
         
         HtmlDoc html = new HtmlDoc(input);
         html.DelimitTags(false);
-        Tag? firstTag = html.Find("div", ("class", "article-content"));
+        Tag? firstTag = html.Find("div", ("class", "article-content", Compare.EXACT));
         if (firstTag == null){
             Assert.Fail("First tag not found");
             return;
         }
-        Tag? innerTag = html.FindFrom("div", firstTag.StartOffset+1, true, ("class", "article-content"));
+        Tag? innerTag = html.FindFrom("div", firstTag.StartOffset+1, ("class", "article-content", Compare.EXACT));
         if (innerTag == null){
             Assert.Fail("Inner tag not found");
             return;
