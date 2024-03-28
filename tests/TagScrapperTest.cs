@@ -158,7 +158,7 @@ public class TagScrapperTest {
     [Test]
     public void noSpaceSelfClosing() {
         const string input = "<p img=\"pic.jpg\"/>";
-        Tag? tag = new HtmlDoc(input).Find("p", ("img", "pic.jpg", Compare.EXACT));
+        Tag? tag = new HtmlDoc(input).Find("p");
         if (tag == null) {
             Assert.Fail("Tag is null");
             return;
@@ -171,8 +171,7 @@ public class TagScrapperTest {
     [Test]
     public void extractAttribute() {
         const string input = "<a alt=\"noise\" href=\"https://www.w3schools.com\">Visit W3Schools</a>";
-        Tag? tag = new HtmlDoc(input).Find("a", 
-            ("alt", "", Compare.KEY_ONLY), ("href", "", Compare.KEY_ONLY));
+        Tag? tag = new HtmlDoc(input).Find("a");
         if (tag == null) {
             Assert.Fail("Tag is null");
             return;
@@ -188,7 +187,7 @@ public class TagScrapperTest {
     [Test]
     public void getAttrib() {
         const string input = "<a href=\"https://link.com\">Visit the LINK</a>";
-        Tag? tag = new HtmlDoc(input).Find("a", ("href", "", Compare.KEY_ONLY));
+        Tag? tag = new HtmlDoc(input).Find("a");
         if (tag == null) {
             Assert.Fail("Tag is null");
             return;

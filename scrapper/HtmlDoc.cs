@@ -37,21 +37,28 @@ public class HtmlDoc {
         delimitTags = enabled;
     }
 
-    /// <summary> Find a tag by name matching given attributes. The order in which attributes are provided does not matter </summary>
+    /// <summary> Find a tag by name matching at least given attributes.
+    /// The tag returned will have at least the number of attributes specified.
+    /// The order in which attributes are provided does not matter </summary>
     /// <param name="tag"> The tag name to find</param>
-    /// <param name="attributes"> The attributes to look for</param>
+    /// <param name="attributes"> The attributes to match against with accordance to rules</param>
     /// <returns>The raw Tag object or null if not found</returns>
     public Tag? Find(string tag, params (string, string, Compare)[] attributes) {
         return FindFrom(tag, 0, attributes);
     }
 
-    /// <summary>Find a tag by name that has no attributes.</summary>
+    /// <summary>Find a tag by name that may or may not contain attributes</summary>
     /// <param name="tag"> the tag name to find</param> 
     /// <returns>The raw Tag object or null if not found</returns>
     public Tag? Find(string tag) {
         return FindFrom(tag, 0);
     }
-
+    
+    /// <summary>Find tags by name and attributes starting at a given index until the end of document</summary>
+    /// <param name="tag"> the tag name to find</param> 
+    /// <param name="from"> index where to begin </param> 
+    /// <param name="attributes"> predicates to match against </param> 
+    /// <returns>The raw Tag object or null if not found</returns>
     public List<Tag> FindAllFrom(string tag, int from, params (string, string, Compare)[] attributes) {
         List<Tag> tags = new List<Tag>();
         int cursor = from;
@@ -317,10 +324,10 @@ public class HtmlDoc {
     }
 
     /// <summary>
-    /// Extracts text from given tag and all its sub-tags beginning at <c>StartOffset</c>. The extraction will begin
+    /// Extracts text from given tag and all its sub-tags beginning at <c>tag.StartOffset</c>. The extraction will begin
     /// at the top level tag and will continue until either the tag is closed or the end of document is reached.
     /// Text extracted from sub-tags will be concatenated using the specified delimiter that can be set by calling
-    /// <c>SetConcatenatingChar()</c>. The <c>EndOffset</c> field of the tag will be set to the index where parsing
+    /// <c>SetConcatenatingChar()</c>. The <c>EndOffset</c> field of the given tag will be set to the index where parsing
     /// finished if its value was -1. </summary>
     /// <param name="tag">the tag to extract text from</param> 
     /// <returns>The raw extracted html</returns>

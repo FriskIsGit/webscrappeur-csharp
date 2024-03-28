@@ -31,7 +31,7 @@ public class Tag {
     }
 
     public bool CompareAttributes(params (string, string, Compare)[] pairs) {
-        if (Attributes.Count != pairs.Length) {
+        if (Attributes.Count < pairs.Length) {
             return false;
         }
         
