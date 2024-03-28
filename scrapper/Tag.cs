@@ -36,8 +36,7 @@ public class Tag {
         }
         
         // Attributes can be provided in a varying order
-        for (int i = 0; i < Attributes.Count; i++) {
-            (string, string, Compare) predicate = pairs[i];
+        foreach (var predicate in pairs) {
             if (!AttributesMatchPredicate(predicate)) {
                 return false;
             }
