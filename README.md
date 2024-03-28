@@ -8,7 +8,7 @@ can be weird.
 
 ## Usage:
 
-1. Let's suppose you want to extract multi-line text from the html below
+#### 1. TEXT EXTRACTION - Let's suppose you want to extract multi-line text from the html below
 ```html
 <div class="outer_div" property="random73913">
     StartText
@@ -19,7 +19,6 @@ can be weird.
 </div>
 ```
 
-It could be done like so:
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
 Tag? tag = doc.Find("div", ("class", "inner_div", Compare.EXACT));
@@ -31,7 +30,7 @@ if (tag != null){
 Output: `Inner text`
 
 ---
-#### 2. Alternatively we can extract text from the outer tag and all its sub-tags. <br>
+####  Alternatively we can extract text from the outer tag and all its sub-tags. <br>
 Each attribute pair has its own comparison policy and follows the format: `(key, value, comparison_policy)` <br>
 Use `Compare.VALUE_STARTS_WITH` if attributes are obfuscated either intentionally or due to `css` auto-generating gibberish.
     
@@ -71,23 +70,32 @@ Output:
 StartTextInner textEnding text
 ```
 ---
-#### 3. Retrieve all matching tags at once
+#### 2. Retrieving tags from a tag
+```html
+<ul>
+    <li>item 1</li>
+    <li>item 2</li>
+    <li>item 3</li>
+</ul>
+```
+
 ```csharp
-HtmlDoc doc = new HtmlDoc(html);
-List<Tag> tags = doc.FindAll("script");
-foreach(var tag in tags){
-    string extract = doc.ExtractText(tag);
-    Console.WriteLine(extract);
+HtmlDoc doc = new HtmlDoc(input);
+Tag? tag = doc.Find("ul");
+if (tag == null) {
+    return;
 }
+
+List<Tag> listElements = doc.ExtractTags(tag, "li");
 ```
 ---
-#### 4. Fetch html from URL with browser headers
+#### 3. Fetch html from URL with browser headers
 ```csharp
 string html = HtmlDoc.fetchHtml("https://toscrape.com");
 HtmlDoc doc = new HtmlDoc(html);
 ```
 ---
-#### 5. Retrieve link from an attribute
+#### 4. ATTRIBUTE EXTRACTION - Retrieve link from an attribute
 ```csharp
 Tag? tag = new HtmlDoc(input).Find("a", ("href", "", Compare.KEY_ONLY));
 if (tag == null) {
@@ -96,4 +104,3 @@ if (tag == null) {
 string link = tag.GetAttribute("href");
 Console.WriteLine(link);
 ```
-

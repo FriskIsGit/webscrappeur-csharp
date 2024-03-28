@@ -90,8 +90,7 @@ public class HtmlDoc {
             char chr = html[i];
             switch (chr) {
                 case '<':
-                    bool comment = i + 1 < len && html[i + 1] == '!' && i + 2 < len && html[i+2] == '-';
-                    if (comment) {
+                    if (isCommentAhead(i)) {
                         i = skipComment(i+1);
                         continue;
                     }
@@ -245,8 +244,7 @@ public class HtmlDoc {
             char chr = html[i];
             switch (chr) {
                 case '<':
-                    bool comment = i + 1 < len && html[i + 1] == '!';
-                    if (comment) {
+                    if (isCommentAhead(i)) {
                         i = skipComment(i+1);
                         continue;
                     }
@@ -285,7 +283,7 @@ public class HtmlDoc {
                     }
 
                     tagStack.Push(parsedTag.Name);
-                    if (html[end - 1] == '/') {
+                    if (end != -1 && html[end - 1] == '/') {
                         tagStack.Pop();
                     }
                     // It could be that the tag given is a void tag in which case it has no tags
@@ -311,6 +309,11 @@ public class HtmlDoc {
 
     private int skipComment(int from) {
         return IndexOf("-->", from);
+    }
+    private bool isCommentAhead(int lt) {
+        return lt + 1 < len && html[lt + 1] == '!' 
+            && lt + 2 < len && html[lt + 2] == '-'
+            && lt + 3 < len && html[lt + 3] == '-';
     }
 
     /// <summary>
@@ -356,8 +359,7 @@ public class HtmlDoc {
                     break;
                 // cannot exist in text in this form, must be a character code
                 case '<':
-                    bool comment = i + 1 < len && html[i + 1] == '!';
-                    if (comment) {
+                    if (isCommentAhead(i)) {
                         i = skipComment(i+1);
                         continue;
                     }
