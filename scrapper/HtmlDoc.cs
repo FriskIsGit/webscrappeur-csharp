@@ -90,7 +90,7 @@ public class HtmlDoc {
             char chr = html[i];
             switch (chr) {
                 case '<':
-                    bool comment = i + 1 < len && html[i + 1] == '!';
+                    bool comment = i + 1 < len && html[i + 1] == '!' && i + 2 < len && html[i+2] == '-';
                     if (comment) {
                         i = skipComment(i+1);
                         continue;

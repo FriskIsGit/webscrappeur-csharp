@@ -171,7 +171,8 @@ public class TagScrapperTest {
     [Test]
     public void extractAttribute() {
         const string input = "<a alt=\"noise\" href=\"https://www.w3schools.com\">Visit W3Schools</a>";
-        Tag? tag = new HtmlDoc(input).Find("a");
+        Tag? tag = new HtmlDoc(input).Find("a", 
+            ("alt", "", Compare.KEY_ONLY), ("href", "", Compare.KEY_ONLY));
         if (tag == null) {
             Assert.Fail("Tag is null");
             return;

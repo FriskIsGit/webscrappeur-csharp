@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
+using System.Web;
 using NUnit.Framework;
 using WebScrapper.scrapper;
 
@@ -25,38 +27,48 @@ public class LyricsScrapperTest{
             string extract = html.ExtractText(div);
             fullExtract.Append(extract).Append('\n');
         }
-        
-        Console.WriteLine(fullExtract);
+
+        // Escaping special characters
+        string escapedLyrics = escapeHTML(fullExtract.ToString());
+        Console.WriteLine(escapedLyrics);
     }
     
     [Test]
     public void fullMusixScrap(){
-        string input = File.ReadAllText(RESOURCE_DIR_PATH + "musix.html");
-        
+        string input = File.ReadAllText(RESOURCE_DIR_PATH + "musixmatch.html");
         HtmlDoc html = new HtmlDoc(input);
-        Tag? firstTag = html.Find("span", ("class", "lyrics__content__ok", Compare.EXACT));
-        if (firstTag == null){
-            Assert.Fail("First tag not found");
+        int lyricsIndex = input.IndexOf("Lyrics of", StringComparison.Ordinal);
+        if (lyricsIndex == -1) {
+            Assert.Fail("There are no lyrics for this song");
             return;
         }
-        Tag? mainTag = html.FindFrom("span", firstTag.StartOffset +1, ("class", "lyrics__content__ok", Compare.EXACT));
-        if (mainTag == null){
-            Assert.Fail("Main tag not found");
-            return;
+        // This webpage is now 'div' infested (approx. 750 divs)
+        int outerSongDiv = input.LastIndexOf("<div class", lyricsIndex, StringComparison.Ordinal);
+        
+        Tag? outerLyricsDiv = html.FindFrom("div", outerSongDiv, ("class", "css", Compare.VALUE_STARTS_WITH));
+        if (outerLyricsDiv is null) 
+            throw new UnreachableException();
+        
+        List<Tag> songParts = html.ExtractTags(outerLyricsDiv, "div");
+        var lyrics = new StringBuilder(256);
+        foreach (var songPart in songParts) {
+            string part = html.ExtractText(songPart);
+            lyrics.Append(part);
+            if (part.Contains("Writer(s)")) {
+                break;
+            }
         }
-        string extract1 = html.ExtractText(firstTag);
-        string extract2 = html.ExtractText(mainTag);
-        Console.WriteLine(extract1 + '\n' + extract2);
+        string escapedLyrics = escapeHTML(lyrics.ToString());
+        Console.WriteLine(escapedLyrics);
     }
     [Test]
     public void fullLyricsScrap(){
         string input = File.ReadAllText(RESOURCE_DIR_PATH + "lyrics.html");
-        
         HtmlDoc html = new HtmlDoc(input);
         html.DelimitTags(false);
         Tag? tag = html.Find("pre", 
             ("id", "lyric-body-text", Compare.EXACT), 
-            ("class", "lyric-body", Compare.EXACT),
+            ("class", "lyric-body", Compare.VALUE_STARTS_WITH),
             ("dir", "ltr", Compare.EXACT),
             ("data-lang", "en", Compare.EXACT)
             );
@@ -70,7 +82,6 @@ public class LyricsScrapperTest{
     [Test]
     public void youListenerScrap(){
         string input = File.ReadAllText(RESOURCE_DIR_PATH + "youlistener.html");
-        
         HtmlDoc html = new HtmlDoc(input);
         html.DelimitTags(false);
         Tag? firstTag = html.Find("div", ("class", "article-content", Compare.EXACT));
@@ -84,6 +95,11 @@ public class LyricsScrapperTest{
             return;
         }
         string extract = html.ExtractText(innerTag);
-        Console.WriteLine(extract);
+        string escapedLyrics = escapeHTML(extract);
+        Console.WriteLine(escapedLyrics);
+    }
+
+    public static string escapeHTML(string html) {
+        return HttpUtility.HtmlDecode(html);
     }
 }
