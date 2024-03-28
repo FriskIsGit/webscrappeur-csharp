@@ -8,9 +8,9 @@ can be weird.
 
 ## Usage:
 
-Let's suppose this is the html we want to scrap
+1. Let's suppose you want to extract multi-line text from the html below
 ```html
-<div class="outer_div" property="value">
+<div class="outer_div" property="random73913">
     StartText
     <div class="inner_div">
         Inner text
@@ -19,10 +19,10 @@ Let's suppose this is the html we want to scrap
 </div>
 ```
 
-This is how we'd do it
+It could be done like so:
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
-Tag? tag = doc.Find("div", ("class", "inner_div"));
+Tag? tag = doc.Find("div", ("class", "inner_div", Compare.EXACT));
 if (tag != null){
     string extract = doc.ExtractText(tag);
     Console.WriteLine(extract);
@@ -31,10 +31,16 @@ if (tag != null){
 Output: `Inner text`
 
 ---
-Alternatively we can extract text from the outer tag and all its sub-tags
+#### 2. Alternatively we can extract text from the outer tag and all its sub-tags. <br>
+Each attribute pair has its own comparison policy and follows the format: `(key, value, comparison_policy)` <br>
+Use `Compare.VALUE_STARTS_WITH` if attributes are obfuscated either intentionally or due to `css` auto-generating gibberish.
+    
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
-Tag? tag = doc.Find("div", ("class", "outer_div"), ("property", "value"));
+Tag? tag = doc.Find("div", 
+    ("class", "outer_div", Compare.EXACT),
+    ("property", "random", Compare.VALUE_STARTS_WITH)
+);
 if (tag != null){
     string extract = doc.ExtractText(tag);
     Console.WriteLine(extract);
@@ -46,6 +52,7 @@ StartText
 Inner text
 Ending text
 ```
+
 
 Change the concatenating char
 ```csharp
@@ -59,9 +66,12 @@ Or disable concatenation completely
 ```csharp
 doc.DelimitTags(false)
 ```
+Output:
+```
+StartTextInner textEnding text
+```
 ---
-### Tips
-Retrieve all matching tags at once
+#### 3. Retrieve all matching tags at once
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
 List<Tag> tags = doc.FindAll("script");
@@ -71,22 +81,19 @@ foreach(var tag in tags){
 }
 ```
 ---
-Fetch html from URL with browser headers
+#### 4. Fetch html from URL with browser headers
 ```csharp
 string html = HtmlDoc.fetchHtml("https://toscrape.com");
 HtmlDoc doc = new HtmlDoc(html);
 ```
-Retrieve link from an attribute
+---
+#### 5. Retrieve link from an attribute
 ```csharp
-Tag? tag = new HtmlDoc(input).Find("a");
+Tag? tag = new HtmlDoc(input).Find("a", ("href", "", Compare.KEY_ONLY));
 if (tag == null) {
     return;
 }
-
-foreach (var attrib in tag.Attributes) {
-    if (attrib.Item1 == "href") {
-        Console.WriteLine(attrib.Item2);
-    }
-}
+string link = tag.GetAttribute("href");
+Console.WriteLine(link);
 ```
 

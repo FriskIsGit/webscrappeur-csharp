@@ -185,4 +185,16 @@ public class TagScrapperTest {
             }
         }
     }
+    [Test]
+    public void getAttrib() {
+        const string input = "<a href=\"https://link.com\">Visit the LINK</a>";
+        Tag? tag = new HtmlDoc(input).Find("a", ("href", "", Compare.KEY_ONLY));
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        string? value = tag.GetAttribute("href");
+        Assert.AreEqual(value, "https://link.com");
+    }
 }
