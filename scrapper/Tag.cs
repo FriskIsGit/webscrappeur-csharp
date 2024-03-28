@@ -61,7 +61,7 @@ public class Tag {
                     }
                     break;
                 case Compare.VALUE_STARTS_WITH:
-                    if (pair.Item1.StartsWith(predicate.Item1)) {
+                    if (pair.Item2.StartsWith(predicate.Item2)) {
                         return true;
                     }
                     break;
