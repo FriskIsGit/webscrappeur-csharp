@@ -159,23 +159,34 @@ public class HtmlDoc {
                     afterEqual = true;
                     break;
                 case ' ':
-                    if (afterEqual) {
-                        if (value.Length > 0 && !inQuoteVal) {
-                            parsedTag.Attributes.Add((name.ToString(), value.ToString()));
-                            afterEqual = false;
-                            name.Clear();
-                            value.Clear();
-                        }
-                        else if (inQuoteVal) {
-                            value.Append(' ');
-                        }
+                    if (!afterEqual) {
+                        break;
                     }
-
+                    if (inQuoteVal) {
+                        value.Append(' ');
+                    }
+                    else if (value.Length > 0) {
+                        parsedTag.Attributes.Add((name.ToString(), value.ToString()));
+                        afterEqual = false;
+                        name.Clear();
+                        value.Clear();
+                    }
                     break;
                 case '"':
-                    if (afterEqual) {
-                        inQuoteVal = !inQuoteVal;
+                    if (!afterEqual) {
+                        // keys shouldn't contain quotes but if it does it'll be appended
+                        name.Append('"');
+                        break;
                     }
+
+                    if (inQuoteVal) {
+                        // triggered on the closing "
+                        parsedTag.Attributes.Add((name.ToString(), value.ToString()));
+                        afterEqual = false;
+                        name.Clear();
+                        value.Clear();
+                    }
+                    inQuoteVal = !inQuoteVal;
 
                     break;
                 case '/':

@@ -196,4 +196,47 @@ public class TagScrapperTest {
         string? value = tag.GetAttribute("href");
         Assert.AreEqual(value, "https://link.com");
     }
+    [Test]
+    public void emptyValue() {
+        const string input = "<a empty=\"\" next=\"1234\">Enjoy our website</a>";
+        Tag? tag = new HtmlDoc(input).Find("a");
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        string? valueNext = tag.GetAttribute("next");
+        Assert.AreEqual(valueNext, "1234");
+        string? valueEmpty = tag.GetAttribute("empty");
+        Assert.AreEqual(valueEmpty, "");
+    }
+    
+    [Test]
+    public void whitespaceSeparatedValue() {
+        const string input = "<a faulty= \"ok\">Enjoy our website</a>";
+        Tag? tag = new HtmlDoc(input).Find("a");
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        string? valueNext = tag.GetAttribute("faulty");
+        Assert.AreEqual(valueNext, "ok");
+    }
+    
+    [Test]
+    public void trailingSpacesAfterValues() {
+        const string input = "<a unclosedValue=\"ok\"   another = \"smth\"  >Enjoy our website</a>";
+        Tag? tag = new HtmlDoc(input).Find("a");
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        string? valueNext = tag.GetAttribute("unclosedValue");
+        Assert.AreEqual(valueNext, "ok");
+        
+        string? another = tag.GetAttribute("another");
+        Assert.AreEqual(another, "smth");
+    }
 }
