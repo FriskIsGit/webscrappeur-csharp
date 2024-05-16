@@ -256,8 +256,9 @@ public class HtmlDoc {
             return new List<Tag>();
         }
         var extractedTags = new List<Tag>();
-        int from = tag.EndOffset != -1 ? tag.EndOffset : tag.StartOffset;
+        int from = tag.EndOffset == -1 ? tag.EstimateEndOffset() : tag.EndOffset;
         Stack<string> tagStack = new Stack<string>();
+        tagStack.Push(tag.Name);
         for (int i = from; i < len; i++) {
             char chr = html[i];
             switch (chr) {

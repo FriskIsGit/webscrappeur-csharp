@@ -60,4 +60,33 @@ public class TagsWithinTagTest {
         Assert.True(doc.ExtractText(listElements[1]).EndsWith('2'));
         Assert.True(doc.ExtractText(listElements[2]).EndsWith('3'));
     }
+    
+    [Test]
+    public void divWithinDivTests() {
+        const string input = """
+                        <div class="wrappers">
+                            <div item="1">This is item 1</div>
+                            <div item="2">This is item 2</div>
+                            <div item="3">This is item 3</div>
+                        </div>
+                        <div>Other Div1</div>
+                        <div>Other Div2</div>
+                        <div>Other Div3</div>
+                        """;
+        HtmlDoc doc = new HtmlDoc(input);
+        Tag? tag = doc.Find("div", ("class", "wrappers", Compare.EXACT));
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        List<Tag> divElements = doc.ExtractTags(tag, "div");
+        Assert.AreEqual(3, divElements.Count);
+        int i = 1;
+        foreach (var div in divElements) {
+            Assert.AreEqual(i.ToString(), div.GetAttribute("item"));
+            i++;
+        }
+        
+    }
 }

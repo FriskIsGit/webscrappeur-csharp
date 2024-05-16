@@ -84,6 +84,14 @@ public class Tag {
         Attributes = attributes;
     }
 
+    public int EstimateEndOffset() {
+        int end = StartOffset + 1 + Name.Length;
+        foreach (var attribute in Attributes) {
+            end += 1 + attribute.Item1.Length + attribute.Item2.Length + 3;
+        }
+        return end;
+    }
+    
     public override string ToString() {
         return "Tag{name=" + Name + ", index=" + StartOffset + "}";
     }
