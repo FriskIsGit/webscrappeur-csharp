@@ -168,6 +168,19 @@ public class TextScrapperTest{
         Assert.AreEqual(0, tag.StartOffset);
     }
     [Test]
+    public void attributesSeparatedWithDifferentWhitespaces(){
+        const string input = "<a\n\nsrc=\"web.com\"\tscheme=\"https\" txt=\"1\n\n2\">";
+        Tag? tag = new HtmlDoc(input).Find("a");
+        if (tag == null){
+            Assert.Fail("Tag Not Found");
+            return;
+        }
+        Assert.AreEqual(0, tag.StartOffset);
+        Assert.AreEqual("web.com", tag.GetAttribute("src"));
+        Assert.AreEqual("https", tag.GetAttribute("scheme"));
+        Assert.AreEqual("1\n\n2", tag.GetAttribute("txt"));
+    }
+    [Test]
     public void categoriesRealScrape(){
         string html = HtmlDoc.fetchHtml("http://books.toscrape.com");
         HtmlDoc doc = new HtmlDoc(html);

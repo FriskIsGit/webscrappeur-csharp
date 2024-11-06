@@ -164,11 +164,15 @@ public class HtmlDoc {
                     afterEqual = true;
                     break;
                 case ' ':
+                case '\n':
+                case '\r':
+                case '\t':
+                case '\f':
                     if (!afterEqual) {
                         break;
                     }
                     if (inQuoteVal) {
-                        value.Append(' ');
+                        value.Append(chr);
                     }
                     else if (value.Length > 0) {
                         parsedTag.Attributes.Add((name.ToString(), value.ToString()));
