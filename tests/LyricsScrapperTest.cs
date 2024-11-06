@@ -19,7 +19,7 @@ public class LyricsScrapperTest{
         html.DelimitTags(false);
         StringBuilder fullExtract = new StringBuilder(512);
         List<Tag> tags = html.FindAll("div",
-            ("class", "Lyrics__Container-sc-1ynbvzw-5", Compare.VALUE_STARTS_WITH), 
+            ("class", "Lyrics__Container-sc-1ynbvzw-", Compare.VALUE_STARTS_WITH), 
             ("data-lyrics-container", "true", Compare.EXACT));
         Console.WriteLine("SIZE: " + tags.Count);
         
@@ -35,8 +35,10 @@ public class LyricsScrapperTest{
     
     [Test]
     public void fullMusixScrap(){
-        string input = File.ReadAllText(RESOURCE_DIR_PATH + "musixmatch.html");
+        string input = File.ReadAllText(RESOURCE_DIR_PATH + "mux.html");
         HtmlDoc html = new HtmlDoc(input);
+        html.DelimitTags(true);
+        html.ReplaceLineBreakWithNewLine(true);
         int lyricsIndex = input.IndexOf("Lyrics of", StringComparison.Ordinal);
         if (lyricsIndex == -1) {
             Assert.Fail("There are no lyrics for this song");

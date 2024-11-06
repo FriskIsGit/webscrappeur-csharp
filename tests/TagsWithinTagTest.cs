@@ -89,4 +89,30 @@ public class TagsWithinTagTest {
         }
         
     }
+    
+    [Test]
+    public void imgTags() {
+        
+        const string input = """
+                        <div class="wrappers">
+                            <img src="1">
+                            <img src="2"/>
+                            <a href="3"></a>
+                            <a href="4"></a>
+                            <img src="3">
+                        </div>
+                        """;
+        HtmlDoc doc = new HtmlDoc(input);
+        Tag? tag = doc.Find("div", ("class", "wrappers", Compare.EXACT));
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        List<Tag> images = doc.ExtractTags(tag, "img");
+        Assert.AreEqual(3, images.Count);
+        Assert.AreEqual(images[0].GetAttribute("src"), "1");
+        Assert.AreEqual(images[1].GetAttribute("src"), "2");
+        Assert.AreEqual(images[2].GetAttribute("src"), "3");
+    }
 }

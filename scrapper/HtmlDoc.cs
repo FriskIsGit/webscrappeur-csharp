@@ -113,7 +113,7 @@ public class HtmlDoc {
                     // parse tag
                     int j = i + 1;
                     for (; j < len; j++) {
-                        if (html[j] == ' ') {
+                        if (isHtmlWhiteSpace(html[j])) {
                             hasAttributes = true;
                             break;
                         }
@@ -146,6 +146,11 @@ public class HtmlDoc {
         return null;
     }
 
+    // https://www.w3.org/TR/html4/struct/text.html#h-9.1
+    private static bool isHtmlWhiteSpace(char c) {
+        return c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\f';
+    }
+    
     //returns '>' index where tag ends
     private int parseAttributes(Tag parsedTag, int from) {
         //from cursor should be placed after tag name
@@ -284,7 +289,7 @@ public class HtmlDoc {
                     // parse tag
                     int j = i + 1;
                     for (; j < len; j++) {
-                        if (html[j] == ' ') {
+                        if (isHtmlWhiteSpace(html[j])) {
                             hasAttributes = true;
                             break;
                         }
