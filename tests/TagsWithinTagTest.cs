@@ -92,7 +92,6 @@ public class TagsWithinTagTest {
     
     [Test]
     public void imgTags() {
-        
         const string input = """
                         <div class="wrappers">
                             <img src="1">
@@ -114,5 +113,28 @@ public class TagsWithinTagTest {
         Assert.AreEqual(images[0].GetAttribute("src"), "1");
         Assert.AreEqual(images[1].GetAttribute("src"), "2");
         Assert.AreEqual(images[2].GetAttribute("src"), "3");
+    }
+    
+    [Test]
+    public void tableRows() {
+        const string input = 
+            """
+            <tbody>
+              <img src="url" /><a>Anchor</a>  
+              <tr id="tr1"></tr>
+              <tr id="tr2"></tr>
+            </tbody>
+            """;
+        HtmlDoc doc = new HtmlDoc(input);
+        Tag? tag = doc.Find("tbody");
+        if (tag == null) {
+            Assert.Fail("Tag is null");
+            return;
+        }
+
+        List<Tag> images = doc.ExtractTags(tag, "tr");
+        Assert.AreEqual(2, images.Count);
+        Assert.AreEqual("tr1", images[0].GetAttribute("id"));
+        Assert.AreEqual("tr2", images[1].GetAttribute("id"));
     }
 }

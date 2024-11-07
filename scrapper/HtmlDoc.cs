@@ -151,7 +151,7 @@ public class HtmlDoc {
         return c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\f';
     }
     
-    //returns '>' index where tag ends
+    // returns index of '>' where tag ends or an index at EOF
     private int parseAttributes(Tag parsedTag, int from) {
         //from cursor should be placed after tag name
         StringBuilder name = new StringBuilder();
@@ -202,11 +202,10 @@ public class HtmlDoc {
                     if (!inQuoteVal) {
                         //assume it's a self-closing tag
                         int endOffset = i + 1;
-                        for (int j = i + 1; j < len; j++) {
-                            if (html[j] != '>')
+                        for (; endOffset < len; endOffset++) {
+                            if (html[endOffset] != '>')
                                 continue;
                             
-                            endOffset = j + 1;
                             break;
                         }
 
