@@ -9,7 +9,7 @@ public class TextScrapperTest{
     public void test1(){
         const string input = "<h2 div=\"title is apart\">Internal text</h2>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("h2", ("div", "title is apart", Compare.EXACT));
+        Tag? tag = html.Find("h2", Compare.Exact("div", "title is apart"));
         if (tag == null){
             Assert.Fail("Tag not found");
             return;
@@ -22,7 +22,7 @@ public class TextScrapperTest{
         const string input = "<div class = \"outer_div\" property=\"value\">Start" +
                              "Text<div class=\"inner_div\">Inner text</div>Ending  text</div>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("div", ("class", "inner_div", Compare.EXACT));
+        Tag? tag = html.Find("div", Compare.Value("inner_div"));
         if (tag == null){
             Assert.Fail("Tag not found");
             return;
@@ -35,8 +35,7 @@ public class TextScrapperTest{
         const string input = "<div class = \"outer_div\" property=\"value\">Start" +
                              "Text<div class=\"inner_div\">Super inner text</div>Ending  text</div>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("div", ("class", "outer_div", Compare.EXACT),
-            ("property", "value", Compare.EXACT));
+        Tag? tag = html.Find("div", Compare.Value("outer_div"), Compare.Key("property"));
         if (tag == null){
             Assert.Fail("Tag not found");
             return;
@@ -49,7 +48,7 @@ public class TextScrapperTest{
     public void outOfBounds(){
         const string input = "<picture width=512 height=256>alternative text</picture>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("picture", ("width", "512", Compare.EXACT), ("height", "256", Compare.EXACT));
+        Tag? tag = html.Find("picture", Compare.Exact("width", "512"), Compare.Exact("height", "256"));
         if (tag == null){
             Assert.Fail("Tag Not Found");
             return;
@@ -61,7 +60,7 @@ public class TextScrapperTest{
     public void oneSpace(){
         const string input = "<picture id=84 >1 space</picture>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("picture", ("id", "84", Compare.EXACT));
+        Tag? tag = html.Find("picture", Compare.Exact("id", "84"));
         if (tag == null){
             Assert.Fail("Tag Not Found");
             return;
@@ -72,7 +71,7 @@ public class TextScrapperTest{
     public void threeSpaces(){
         const string input = "<picture id=84   >3 space</picture>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("picture", ("id", "84", Compare.EXACT));
+        Tag? tag = html.Find("picture", Compare.Exact("id", "84"));
         if (tag == null){
             Assert.Fail("Tag Not Found");
             return;
@@ -83,7 +82,7 @@ public class TextScrapperTest{
     public void startWithSpace(){
         const string input = "<picture id=84> 123z</picture>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("picture", ("id", "84", Compare.EXACT));
+        Tag? tag = html.Find("picture", Compare.Exact("id", "84"));
         if (tag == null){
             Assert.Fail("Tag Not Found");
             return;
@@ -94,7 +93,7 @@ public class TextScrapperTest{
     public void startAndEndWithSpace(){
         const string input = "<picture id=84> 123z </picture>";
         HtmlDoc html = new HtmlDoc(input);
-        Tag? tag = html.Find("picture", ("id", "84", Compare.EXACT));
+        Tag? tag = html.Find("picture", Compare.Exact("id", "84"));
         if (tag == null){
             Assert.Fail("Tag Not Found");
             return;
@@ -159,8 +158,7 @@ public class TextScrapperTest{
     public void attributesWithManySpacesVar2(){
         const string input = "<picture hey  =  \" 125z\"   245=f321    >";
         Tag? tag = new HtmlDoc(input).Find("picture", 
-            ("hey", " 125z", Compare.EXACT),
-            ("245", "f321", Compare.EXACT));
+            Compare.Exact("hey", " 125z"), Compare.Exact("245", "f321"));
         if (tag == null){
             Assert.Fail("Tag Not Found");
             return;
@@ -184,7 +182,7 @@ public class TextScrapperTest{
     public void categoriesRealScrape(){
         string html = HtmlDoc.fetchHtml("http://books.toscrape.com");
         HtmlDoc doc = new HtmlDoc(html);
-        Tag? tag = doc.Find("a", ("href", "catalogue/category/books_1/index.html", Compare.EXACT));
+        Tag? tag = doc.Find("a", Compare.Exact("href", "catalogue/category/books_1/index.html"));
         if (tag == null){
             Assert.Fail("Pre-tag not found");
             return;

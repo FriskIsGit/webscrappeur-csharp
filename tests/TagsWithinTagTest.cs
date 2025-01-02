@@ -74,7 +74,7 @@ public class TagsWithinTagTest {
                         <div>Other Div3</div>
                         """;
         HtmlDoc doc = new HtmlDoc(input);
-        Tag? tag = doc.Find("div", ("class", "wrappers", Compare.EXACT));
+        Tag? tag = doc.Find("div", Compare.Exact("class", "wrappers"));
         if (tag == null) {
             Assert.Fail("Tag is null");
             return;
@@ -102,7 +102,7 @@ public class TagsWithinTagTest {
                         </div>
                         """;
         HtmlDoc doc = new HtmlDoc(input);
-        Tag? tag = doc.Find("div", ("class", "wrappers", Compare.EXACT));
+        Tag? tag = doc.Find("div");
         if (tag == null) {
             Assert.Fail("Tag is null");
             return;

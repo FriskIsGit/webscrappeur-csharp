@@ -5,8 +5,9 @@ using System.Text;
 namespace WebScrapper.scrapper;
 
 public class HtmlDoc {
+    public const string USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130";
     private static readonly HttpClient Client = new() {
-        Timeout = TimeSpan.FromSeconds(10)
+        Timeout = TimeSpan.FromSeconds(30)
     };
     private readonly string html;
     private readonly int len;
@@ -17,7 +18,7 @@ public class HtmlDoc {
     public HtmlDoc(string contents) {
         html = contents;
         len = html.Length;
-        concatChar = '\n';
+         concatChar = '\n';
     }
 
     public void SetConcatenatingChar(char given) {
@@ -29,10 +30,11 @@ public class HtmlDoc {
         brToNewline = enabled;
     }
 
-    /// <summary>During extraction - raw text can be found in both tags and subtags. The text will be concatenated
-    /// using the <c>concatChar</c> (a delimiter)</summary>
-    /// <param name="enabled"> whether to use a delimiter when concatenating text extracted from two or more tags</param>
-    /// <returns>The raw Tag object or null if not found</returns>
+    /// <summary>In HTML, text content within tags can be combined with other elements to create formatted nested tree.
+    /// Therefore it's important to specify a delimiter so that extraction the text can resemble the original.
+    /// <seealso cref="SetConcatenatingChar(char)"/>
+    /// </summary>
+    /// <param name="enabled"> whether to use a delimiter when concatenating</param>
     public void DelimitTags(bool enabled) {
         delimitTags = enabled;
     }
@@ -41,10 +43,10 @@ public class HtmlDoc {
     /// The tag returned will have at least the number of attributes specified.
     /// The order in which attributes are provided does not matter </summary>
     /// <param name="tag"> The tag name to find</param>
-    /// <param name="attributes"> The attributes to match against with accordance to rules</param>
+    /// <param name="comparisons"> attribute predicates to match against </param>
     /// <returns>The raw Tag object or null if not found</returns>
-    public Tag? Find(string tag, params (string, string, Compare)[] attributes) {
-        return FindFrom(tag, 0, attributes);
+    public Tag? Find(string tag, params Compare[] comparisons) {
+        return FindFrom(tag, 0, comparisons);
     }
 
     /// <summary>Find a tag by name that may or may not contain attributes</summary>
@@ -54,16 +56,16 @@ public class HtmlDoc {
         return FindFrom(tag, 0);
     }
     
-    /// <summary>Find tags by name and attributes starting at a given index until the end of document</summary>
+    /// <summary>Find tags by name and attributes starting at the given index until the end of document</summary>
     /// <param name="tag"> the tag name to find</param> 
     /// <param name="from"> index where to begin </param> 
-    /// <param name="attributes"> predicates to match against </param> 
-    /// <returns>The raw Tag object or null if not found</returns>
-    public List<Tag> FindAllFrom(string tag, int from, params (string, string, Compare)[] attributes) {
+    /// <param name="comparisons"> attribute predicates to match against </param>
+    /// <returns>All Tag objects which matched, possibly an empty list</returns>
+    public List<Tag> FindAllFrom(string tag, int from, params Compare[] comparisons) {
         List<Tag> tags = new List<Tag>();
         int cursor = from;
         while (cursor < len) {
-            Tag? traverserTag = FindFrom(tag, cursor, attributes);
+            Tag? traverserTag = FindFrom(tag, cursor, comparisons);
             if (traverserTag == null) {
                 break;
             }
@@ -80,8 +82,8 @@ public class HtmlDoc {
         return tags;
     }
 
-    public List<Tag> FindAll(string tag, params (string, string, Compare)[] attributes) {
-        return FindAllFrom(tag, 0, attributes);
+    public List<Tag> FindAll(string tag, params Compare[] comparisons) {
+        return FindAllFrom(tag, 0, comparisons);
     }
     public List<Tag> FindAll(string tag) {
         return FindAllFrom(tag, 0);
@@ -90,9 +92,9 @@ public class HtmlDoc {
     /// <summary>Linearly searches for a tag in a given HtmlDoc returning the first Tag that matches predicates</summary>
     /// <param name="tag"> the tag name to find</param> 
     /// <param name="from"> the index to search from</param> 
-    /// <param name="attributes"> (key, value, _) pairs of strings representing tag attributes to match against </param> 
+    /// <param name="comparisons"> (key, value, strategy) pairs of strings representing tag attributes to match against </param> 
     /// <returns>The <c>Tag</c> object or <c>null</c> if not found</returns>
-    public Tag? FindFrom(string tag, int from, params (string, string, Compare)[] attributes) {
+    public Tag? FindFrom(string tag, int from, params Compare[] comparisons) {
         for (int i = from; i < len; i++) {
             char chr = html[i];
             switch (chr) {
@@ -113,7 +115,7 @@ public class HtmlDoc {
                     // parse tag
                     int j = i + 1;
                     for (; j < len; j++) {
-                        if (isHtmlWhiteSpace(html[j])) {
+                        if (isHtmlWhitespace(html[j])) {
                             hasAttributes = true;
                             break;
                         }
@@ -130,7 +132,7 @@ public class HtmlDoc {
                         end = parseAttributes(parsedTag, j + 1);
                     }
 
-                    if (parsedTag.Name == tag && parsedTag.CompareAttributes(attributes)) {
+                    if (parsedTag.Name == tag && parsedTag.CompareAttributes(comparisons)) {
                         parsedTag.StartOffset = i;
                         return parsedTag;
                     }
@@ -147,7 +149,7 @@ public class HtmlDoc {
     }
 
     // https://www.w3.org/TR/html4/struct/text.html#h-9.1
-    private static bool isHtmlWhiteSpace(char c) {
+    private static bool isHtmlWhitespace(char c) {
         return c == ' ' || c == '\r' || c == '\n' || c == '\t' || c == '\f';
     }
     
@@ -183,7 +185,7 @@ public class HtmlDoc {
                     break;
                 case '"':
                     if (!afterEqual) {
-                        // keys shouldn't contain quotes but if it does it'll be appended
+                        // Keys shouldn't contain quotes but if one does they are added
                         name.Append('"');
                         break;
                     }
@@ -292,7 +294,7 @@ public class HtmlDoc {
                     // parse tag
                     int j = i + 1;
                     for (; j < len; j++) {
-                        if (isHtmlWhiteSpace(html[j])) {
+                        if (isHtmlWhitespace(html[j])) {
                             hasAttributes = true;
                             break;
                         }
@@ -482,7 +484,7 @@ public class HtmlDoc {
             RequestUri = new Uri(url),
             Method = HttpMethod.Get,
         };
-        getRequest.Headers.UserAgent.ParseAdd("Mozilla/5.0 Gecko/20100101");
+        getRequest.Headers.UserAgent.ParseAdd(USER_AGENT);
         getRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
         getRequest.Headers.AcceptLanguage.ParseAdd("en-US;q=0.7");
         getRequest.Headers.Add("Set-GPC", "1");

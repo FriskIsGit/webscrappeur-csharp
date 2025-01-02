@@ -30,13 +30,13 @@ public class Tag {
         return null;
     }
 
-    public bool CompareAttributes(params (string, string, Compare)[] pairs) {
-        if (Attributes.Count < pairs.Length) {
+    public bool CompareAttributes(params Compare[] comparisons) {
+        if (Attributes.Count < comparisons.Length) {
             return false;
         }
         
         // Attributes can be provided in a varying order
-        foreach (var predicate in pairs) {
+        foreach (var predicate in comparisons) {
             if (!AttributesMatchPredicate(predicate)) {
                 return false;
             }
@@ -46,26 +46,66 @@ public class Tag {
     }
 
     // Determines if Attributes match given predicate
-    private bool AttributesMatchPredicate((string, string, Compare) predicate) {
-        foreach (var pair in Attributes) {
-            switch (predicate.Item3) {
-                case Compare.EXACT:
-                    if (pair.Item1 == predicate.Item1 && pair.Item2 == predicate.Item2) {
+    private bool AttributesMatchPredicate(Compare predicate) {
+        foreach (var (key, value) in Attributes) {
+            switch (predicate.strategy) {
+                case ComparisonStrategy.EXACT:
+                    if (key == predicate.key && value == predicate.value) {
                         return true;
                     }
                     break;
-                case Compare.KEY_ONLY:
-                    if (pair.Item1 == predicate.Item1) {
+                case ComparisonStrategy.KEY:
+                    if (key == predicate.key) {
                         return true;
                     }
                     break;
-                case Compare.VALUE_STARTS_WITH:
-                    if (pair.Item2.StartsWith(predicate.Item2)) {
+                case ComparisonStrategy.VALUE:
+                    if (value == predicate.value) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.KEY_PREFIX:
+                    if (key.StartsWith(predicate.key)) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.VALUE_PREFIX:
+                    if (value.StartsWith(predicate.value)) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.KEY_SUFFIX:
+                    if (key.EndsWith(predicate.key)) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.VALUE_SUFFIX:
+                    if (value.EndsWith(predicate.value)) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.KEY_AND_VALUE_PREFIX:
+                    if (key == predicate.key && value.StartsWith(predicate.value)) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.KEY_AND_VALUE_SUFFIX:
+                    if (key == predicate.key && value.EndsWith(predicate.value)) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.KEY_PREFIX_AND_VALUE:
+                    if (key.StartsWith(predicate.key) && value == predicate.value) {
+                        return true;
+                    }
+                    break;
+                case ComparisonStrategy.KEY_SUFFIX_AND_VALUE:
+                    if (key.EndsWith(predicate.key) && value == predicate.value) {
                         return true;
                     }
                     break;
                 default:
-                    throw new UnreachableException("Compare enum has 3 values");
+                    throw new UnreachableException("Not all comparison types have been implemented!");
             }
         }
 
@@ -97,18 +137,95 @@ public class Tag {
     }
 }
 
+/// Attribute comparison wrapper
+public struct Compare {
+    public string key, value;
+    public ComparisonStrategy strategy;
+    private Compare(string key, string value, ComparisonStrategy strategy) {
+        this.key = key;
+        this.value = value;
+        this.strategy = strategy;
+    }
+
+    public static Compare Exact(string key, string value) {
+        return new Compare(key, value, ComparisonStrategy.EXACT);
+    }
+    
+    public static Compare Key(string key) {
+        return new Compare(key, "", ComparisonStrategy.KEY);
+    }
+    
+    public static Compare Value(string value) {
+        return new Compare("", value, ComparisonStrategy.VALUE);
+    }
+    
+    public static Compare KeyPrefix(string keyPrefix) {
+        return new Compare(keyPrefix, "", ComparisonStrategy.KEY_PREFIX);
+    }
+    
+    public static Compare ValuePrefix(string valuePrefix) {
+        return new Compare("", valuePrefix, ComparisonStrategy.VALUE_PREFIX);
+    }
+    
+    public static Compare KeySuffix(string keySuffix) {
+        return new Compare(keySuffix, "", ComparisonStrategy.KEY_SUFFIX);
+    }
+    
+    public static Compare ValueSuffix(string valueSuffix) {
+        return new Compare("", valueSuffix, ComparisonStrategy.VALUE_SUFFIX);
+    }
+    
+    public static Compare KeyAndValuePrefix(string key, string valuePrefix) {
+        return new Compare(key, valuePrefix, ComparisonStrategy.KEY_AND_VALUE_PREFIX);
+    }
+    
+    public static Compare KeyPrefixAndValue(string keyPrefix, string value) {
+        return new Compare(keyPrefix, value, ComparisonStrategy.KEY_PREFIX_AND_VALUE);
+    }
+    
+    public static Compare KeySuffixAndValue(string keySuffix, string value) {
+        return new Compare(keySuffix, value, ComparisonStrategy.KEY_SUFFIX_AND_VALUE);
+    }
+    
+    public static Compare KeyAndValueSuffix(string key, string valueSuffix) {
+        return new Compare(key, valueSuffix, ComparisonStrategy.KEY_AND_VALUE_SUFFIX);
+    }
+}
+
 /// <summary>
 /// Comparison policy for each pair of attributes.
-/// It's meant to give more control when navigating the page.
-/// Allows retrieving auto-generated tags or tags whose attribute values have no significance
 /// </summary>
-public enum Compare {
-    ///<summary> Both key and value must match </summary>
+public enum ComparisonStrategy {
+    ///<summary> Match both key and value </summary>
     EXACT,
 
-    ///<summary> Only the key must match whereas value is irrelevant </summary>
-    KEY_ONLY,
+    ///<summary> Match only the key </summary>
+    KEY,
 
-    ///<summary> Key must match fully but value must only start with given string </summary>
-    VALUE_STARTS_WITH,
+    ///<summary> Match only the value </summary>
+    VALUE,
+
+    ///<summary> Key must be prefixed with given string to match </summary>
+    KEY_PREFIX,
+    
+    ///<summary> Value must be prefixed with given string </summary>
+    VALUE_PREFIX,
+    
+    ///<summary> Key must be suffixed with given string  </summary>
+    KEY_SUFFIX,
+
+    ///<summary> Value must be suffixed with given string </summary>
+    VALUE_SUFFIX,
+
+    ///<summary> Key must match fully, value must be prefixed with given string </summary>
+    KEY_AND_VALUE_PREFIX,
+
+    ///<summary> Key must be prefixed with given string, value must match fully </summary>
+    KEY_PREFIX_AND_VALUE,
+    
+    ///<summary> Key must match fully, value must be suffixed with given string </summary>
+    KEY_AND_VALUE_SUFFIX,
+
+    ///<summary> Key must be suffixed with given string, value must match fully </summary>
+    KEY_SUFFIX_AND_VALUE,
 }
