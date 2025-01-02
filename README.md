@@ -1,16 +1,15 @@
-﻿## C# Lightweight web scrapper
+﻿# C# Lightweight web scrapper
 Many frameworks nowadays are pretty beefy and contain features most developers won't ever use.
-This project was made to facilitate extracting data from websites in a concise yet simple way 
-(prior knowledge about the framework is not required to get the job done).
+This project was made to facilitate extracting data from websites in a concise yet simple way.
 Only the default libraries are used (including `System.Net.Http` since .NET Core 2.1).
-The code has been tested and works most of the time, but it's not guaranteed to work as expected every time since html
-can be weird.
+The strategy used to parse the webpage is linear as opposed to the usual tree-based approach.
+The code has been tested and works most of the time, but it's not guaranteed to work (yet).
 
-## Usage:
+# Usage:
 
-#### 1. TEXT EXTRACTION - Let's suppose you want to extract multi-line text from the html below
+## 1. Extracting multi-line text
 ```html
-<div class="outer_div" property="random73913">
+<div class="outer_div" property="cf_async_73913">
     StartText
     <div class="inner_div">
         Inner text
@@ -21,7 +20,7 @@ can be weird.
 
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
-Tag? tag = doc.Find("div", ("class", "inner_div", Compare.EXACT));
+Tag? tag = doc.Find("div", Compare.Value("inner_div"));
 if (tag != null){
     string extract = doc.ExtractText(tag);
     Console.WriteLine(extract);
@@ -30,15 +29,15 @@ if (tag != null){
 Output: `Inner text`
 
 ---
-####  Alternatively we can extract text from the outer tag and all its sub-tags. <br>
-Each attribute pair has its own comparison policy and follows the format: `(key, value, comparison_policy)` <br>
-Use `Compare.VALUE_STARTS_WITH` if attributes are obfuscated either intentionally or due to `css` auto-generating gibberish.
+**Alternatively we can extract text from the outer tag and all its sub-tags.** <br>
+Each attribute pair has its own comparison policy <br>
+Use `Compare.ValuePrefix` if attributes are obfuscated either intentionally or due to `css` auto-generating gibberish.
     
 ```csharp
 HtmlDoc doc = new HtmlDoc(html);
 Tag? tag = doc.Find("div", 
-    ("class", "outer_div", Compare.EXACT),
-    ("property", "random", Compare.VALUE_STARTS_WITH)
+    Compare.Exact("class", "outer_div"),
+    Compare.ValuePrefix("cf_async")
 );
 if (tag != null){
     string extract = doc.ExtractText(tag);
@@ -51,7 +50,6 @@ StartText
 Inner text
 Ending text
 ```
-
 
 Change the concatenating char
 ```csharp
@@ -70,7 +68,7 @@ Output:
 StartTextInner textEnding text
 ```
 ---
-#### 2. Retrieving tags from a tag
+## 2. Retrieving tags from a tag
 ```html
 <ul>
     <li>item 1</li>
@@ -89,15 +87,15 @@ if (tag == null) {
 List<Tag> listElements = doc.ExtractTags(tag, "li");
 ```
 ---
-#### 3. Fetch html from URL with browser headers
+## 3. Fetch html from URL with browser headers
 ```csharp
 string html = HtmlDoc.fetchHtml("https://toscrape.com");
 HtmlDoc doc = new HtmlDoc(html);
 ```
 ---
-#### 4. ATTRIBUTE EXTRACTION - Retrieve link from an attribute
+## 4. Retrieving attribute values
 ```csharp
-Tag? tag = new HtmlDoc(input).Find("a", ("href", "", Compare.KEY_ONLY));
+Tag? tag = new HtmlDoc(input).Find("a", Compare.Key("href"));
 if (tag == null) {
     return;
 }
